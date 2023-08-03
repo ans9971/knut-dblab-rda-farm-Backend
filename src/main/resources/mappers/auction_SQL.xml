@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE  mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dblab.auction_backend.mapper.AuctionMapper">
+
+    <!-- ############################################## 경매 CRUD #################################################### -->
+    <select id="registAuction" parameterType="org.dblab.auction_backend.domain.AuctionDTO" resultType="org.dblab.auction_backend.domain.BidClosingDTO">
+        INSERT INTO auction
+        (auction_name, deadline_date, a_starting_price, a_max_price, bid_price, product_id, farm_id, c_name, f_farm_name) VALUES
+        (#{auction_name}, #{deadline_date}, #{a_starting_price}, #{a_max_price}, #{bid_price}, #{productDTO.product_id}, #{farm_id}, #{c_name}, #{f_farm_name})
+        RETURNING auction_Id, deadline_date
+    </select>
+
+    <resultMap type="org.dblab.auction_backend.domain.ProductDTO" id="ProductDTO">
+        <id property="product_id" column="product_id" />
+        <id property="p_name" column="p_name" />
+        <id property="product" column="product" />
+        <id property="product_kg" column="product_kg" />
+        <id property="p_drop_date" column="p_drop_date" />
+        <id property="size" column="size" />
+        <id property="p_status" column="p_status" />
+        <id property="p_explanation" column="p_explanation" />
+        <id property="product_img_name" column="product_img_name" />
+        <id property="p_reg_date" column="p_reg_date" />
+        <id property="farm_id" column="farm_id" />
+    </resultMap>
+
+    <resultMap type="org.dblab.auction_backend.domain.AuctionDTO" id="AuctionDTO">
+        <id property="auction_Id" column="auction_Id" />
+        <id property="auction_name" column="auction_name" />
+        <id property="start_date" column="start_date" />
+        <id property="deadline_date" column="deadline_date" />
+        <id property="a_starting_price" column="a_starting_price" />
+        <id property="a_max_price" column="a_max_price" />
+        <id property="bid_price" column="bid_price" />
+        <id property="bid_num" column="bid_num" />
+        <id property="bid_status" column="bid_status" />
+        <id property="bid_time" column="bid_time" />
+        <id property="product_id" column="product_id" />
+        <id property="consumer_id" column="consumer_id" />
+        <id property="c_name" column="c_name" />
+        <id property="payment_status" column="payment_status" />
+        <id property="farm_id" column="farm_id" />
+        <id property="f_farm_name" column="f_farm_name" />
+        <id property="f_phonenum" column="f_phonenum" />
+        <id property="f_num" column="f_num" />
+        <id property="f_location" column="f_location" />
+        <id property="f_profile_img" column="f_profile_img" />
+        <id property="f_img" column="f_img" />
+
+        <collection property="productDTO" resultMap="ProductDTO"/>
+    </resultMap>
+
+    <select id="getAuction" resultMap="AuctionDTO">
+        SELECT * FROM auction a, product p, farm_member f 
+        WHERE a.product_id = p.product_id AND a.farm_id = f.farm_id AND a.deadline_date > NOW() AND a.bid_status = 1
+        ORDER BY ABS(DATEDIFF(NOW(), deadline_date)) 
+        LIMIT #{startLimit}, 4
+    </select>
+
+    <update id="updateAuction">
+		UPDATE auction
+		SET start_date= #{start_date},
+		deadline_date = #{deadline_date},
+		a_starting_price = #{a_starting_price},
+		bid_num = #{bid_num}
+		WHERE auction_Id = #{auction_Id}
+	</update>
+
+    <delete id="deleteAuction">
+		DELETE FROM auction WHERE auction_Id = #{auction_Id}
+	</delete>
+
+    <update id="updateBidding">
+		UPDATE auction
+		SET bid_price= #{bid_price}, 
+        consumer_id = #{consumer_id},
+        c_name = #{c_name},
+        bid_num = bid_num + 1
+		WHERE auction_Id = #{auction_Id}
+	</update>
+
+    <update id="updateMaxPriceBidding">
+		UPDATE auction
+		SET bid_price= #{bid_price}, 
+        consumer_id = #{consumer_id},
+        c_name = #{c_name},
+        bid_num = bid_num + 1,
+        bid_status = 0
+		WHERE auction_Id = #{auction_Id}
+	</update>
+
+    <select id="auctionInfo" resultMap="AuctionDTO">
+        SELECT * 
+        FROM auction a, product p, farm_member f 
+        WHERE a.product_id = p.product_id and a.farm_id = f.farm_id and a.auction_Id = #{auction_Id}
+    </select>
+
+    <!-- ############################################## 상품 CRUD #################################################### -->
+    
+    <insert id="registProduct" parameterType="org.dblab.auction_backend.domain.ProductDTO" useGeneratedKeys="true" keyProperty="product_id">
+        INSERT INTO product
+        (product, product_kg, p_drop_date, size, p_status, p_explanation, product_img_name, farm_id) VALUES
+        (#{product}, #{product_kg}, #{p_drop_date}, #{size}, #{p_status}, #{p_explanation}, #{product_img_name}, #{farm_id})
+    </insert>
+
+    <update id="updateProduct">
+		UPDATE product
+		SET p_explanation = #{p_explanation},
+        product_img_name = #{product_img_name}
+		WHERE product_id = #{product_id}
+	</update>
+
+    <delete id="deleteProduct">
+		DELETE FROM product WHERE product_id = #{product_id}
+	</delete>
+
+    <!-- ############################################## 리뷰 CRUD #################################################### -->
+    
+    <insert id="registConsumerAuctionReview">  
+        INSERT INTO auction_review
+        (auction_Id, grade_point, consumer_review, review_img_name) VALUES
+        (#{auction_Id}, #{grade_point}, #{consumer_review}, #{review_img_name})
+    </insert>
+
+    <update id="registFarmAuctionReview">
+		UPDATE auction_review
+		SET farm_review = #{farm_review}
+		WHERE auction_Id = #{auction_Id}
+	</update>
+
+    <select id="getProductInfo" resultType="map">
+        SELECT *
+        FROM product
+        WHERE product_id=#{product_id}
+    </select>
+    
+
+    <select id="getConsumerAuctionReview" resultType="map">
+        SELECT a.auction_Id, a.auction_name, p.product_img_name, a_r.grade_point, a_r.consumer_review, a_r.farm_review, f.f_farm_name, f.f_phonenum, a.farm_id, a.consumer_id, a_r.review_img_name
+        FROM auction_review a_r, auction a, product p, farm_member f
+        WHERE a_r.auction_Id =  a.auction_Id and a.product_id = p.product_id and a.farm_id = f.farm_id and a.consumer_id = #{consumer_id}
+        ORDER BY ABS(DATEDIFF(NOW(), deadline_date))
+    </select>
+
+    <select id="getFarmAuctionReview" resultType="map">
+        SELECT a.auction_Id, a.auction_name, p.product_img_name, a_r.grade_point, a_r.consumer_review, a_r.farm_review, a.farm_id, c.c_name, a_r.review_img_name
+        FROM auction_review a_r, auction a, product p, consumer_member c
+        WHERE a_r.auction_Id =  a.auction_Id and a.product_id = p.product_id and a.consumer_id = c.consumer_id and a.farm_id = #{farm_id}
+        ORDER BY ABS(DATEDIFF(NOW(), deadline_date))
+    </select>
+
+    <update id="updateConsumerAuctionReview" parameterType="org.dblab.auction_backend.domain.AuctionReviewDTO">
+		UPDATE auction_review
+		SET grade_point= #{grade_point},
+		consumer_review = #{consumer_review},
+        review_img_name = #{review_img_name}
+		WHERE auction_Id = #{auction_Id}
+	</update>
+
+    <update id="updateFarmAuctionReview" parameterType="org.dblab.auction_backend.domain.AuctionReviewDTO">
+    <![CDATA[ 
+		UPDATE auction_review
+		SET farm_review= #{farm_review}
+		WHERE auction_Id = #{auction_Id}
+    ]]>
+	</update>
+
+    <delete id="deleteAuctionReview">
+		DELETE FROM auction_review 
+        WHERE auction_Id = #{auction_Id}
+	</delete> 
+
+    <!-- 리뷰삭제 시 구매자 점수 삭제 -->
+    <update id="minusConsumerPachiPoint" >
+        UPDATE consumer_member 
+        SET pachi_point = pachi_point-5 
+        WHERE consumer_id= #{consumer_id}
+    </update>
+
+
+    <!-- ############################################## 알림 CRUD #################################################### -->
+
+    <select id="registAlert" parameterType="org.dblab.auction_backend.domain.AlertDTO" resultType="Integer">
+    <![CDATA[ 
+        INSERT INTO alert 
+        (d_status, auction_Id, consumer_id, auction_name, product_img_name, farm_id, f_farm_name, c_name, pre_consumer_id)
+        VALUES
+        (#{d_status}, #{auction_Id}, #{consumer_id}, #{auction_name}, #{product_img_name}, #{farm_id}, #{f_farm_name}, #{c_name}, #{pre_consumer_id})
+        RETURNING alert_id
+    ]]>
+    </select>
+
+    <select id="getAlertTime" resultType="String">
+        SELECT time FROM alert 
+        WHERE alert_id = #{alert_id}
+    </select>
+
+    <select id="getConsumerAlert" resultType="map">
+        SELECT * FROM alert 
+        WHERE consumer_id = #{consumer_id} OR pre_consumer_id = #{consumer_id}
+        ORDER BY time DESC
+        LIMIT #{startLimit}, 10
+    </select>
+
+    <select id="getFarmAlert" resultType="map">
+        SELECT * FROM alert 
+        WHERE farm_id = #{farm_id}
+        ORDER BY time DESC
+        LIMIT #{startLimit}, 10
+    </select>
+
+    <update id="updateCheckedAlert">
+		UPDATE alert
+		SET checked = 1
+		WHERE alert_id = #{alert_id}
+	</update>
+
+    <delete id="deleteAlert">
+		DELETE FROM alert 
+        WHERE auction_Id = #{auction_Id}
+	</delete>
+
+
+    <!-- ############################################## 검색 CRUD #################################################### -->
+   
+    <select id="searchAuction" resultMap="AuctionDTO">
+        SELECT * FROM auction a, product p, farm_member f 
+        WHERE a.product_id = p.product_id and a.farm_id = f.farm_id and a.auction_name LIKE #{keyword}
+        ORDER BY ABS(DATEDIFF(NOW(), deadline_date))
+        LIMIT #{startLimit}, 5
+    </select>
+
+    <!-- 검색어 추가 -->
+    <insert id="registKeyword">
+        INSERT INTO search_word
+        (keyword, ip, consumer_id, farm_id) VALUES
+        (#{keyword}, INET_ATON(#{ip}), #{consumer_id}, #{farm_id});
+    </insert>
+
+    <!-- 키워드 중복 추가 방지를 위한 ip, id 확인 코드 -->
+    <insert id="registConsumerKeyword">
+        INSERT INTO search_word (keyword, ip, consumer_id)
+        SELECT #{keyword}, INET_ATON(#{ip}), #{consumer_id} 
+        FROM DUAL WHERE NOT EXISTS(SELECT * FROM search_word 
+        WHERE (keyword=#{keyword} AND consumer_id=#{consumer_id}) OR (keyword=#{keyword} and ip=INET_ATON(#{ip})));
+    </insert>
+
+    <insert id="registFarmKeyword">
+        INSERT INTO search_word (keyword, ip, farm_id)
+        SELECT #{keyword}, INET_ATON(#{ip}), #{farm_id} 
+        FROM DUAL WHERE NOT EXISTS( SELECT * FROM search_word 
+        WHERE (keyword=#{keyword} AND farm_id=#{farm_id}) OR (keyword=#{keyword} and ip=INET_ATON(#{ip})));
+    </insert>
+
+    <select id="getPopularKeyword" resultType="String">
+        SELECT keyword FROM search_word 
+        GROUP BY keyword 
+        ORDER BY COUNT(*) DESC LIMIT 5;
+    </select>
+
+    <!-- ############################################## 경매 종료 #################################################### -->
+
+    <!-- 현재시간으로부터 3시간 이내 마감될 경매들 불러오기 -->
+    <select id="getRecentlyBid" resultType="org.dblab.auction_backend.domain.BidClosingDTO">
+    <![CDATA[ 
+        SELECT auction_Id, deadline_date 
+        FROM auction
+        WHERE deadline_date > NOW() AND TIMESTAMPDIFF(HOUR, NOW(), deadline_date) < 3 AND bid_status = 1
+        ORDER BY TIMESTAMPDIFF(HOUR, deadline_date, NOW());
+        <!--  TIMESTAMPDIFF 의미가 deadline_date - NOW() 시간만 빼서 그걸 시간단위로 쪼개서 3시간 보다 작으면   -->
+    ]]>
+    </select>
+
+    <!-- 경매 마감 여부 가져오기 -->
+    <select id="getBidStatus" resultType="Integer">
+        SELECT bid_status
+        FROM auction
+        WHERE auction_Id = #{auction_Id};
+    </select>
+
+    <!-- 마감된 경매 상태 업데이트 -->
+    <update id="updateBidStatus">
+		UPDATE auction
+		SET bid_status = 0
+		WHERE auction_Id = #{auction_Id}
+	</update>
+
+    <resultMap type="org.dblab.auction_backend.domain.Bidding" id="Bidding">
+        <id property="auction_Id" column="auction_Id" />
+        <id property="farm_id" column="farm_id" />
+        <id property="consumer_id" column="consumer_id" />
+        <id property="bid_price" column="bid_price" />
+        <id property="auction_name" column="auction_name" />
+        <id property="product_img_name" column="product_img_name" />
+        <id property="f_farm_name" column="f_farm_name" />
+        <id property="c_name" column="c_name" />
+    </resultMap>
+
+    <!-- 마감된 경매 참여자(낙차잘, 농가) 가져오기 -->
+    <select id="getClosedBidding" resultType="map">
+        SELECT a.auction_Id, a.bid_price, a.farm_id, a.consumer_id, a.auction_name , p.product_img_name, a.f_farm_name, a.c_name
+        FROM auction AS a 
+        INNER JOIN product AS p ON a.product_id = p.product_id
+        WHERE a.auction_Id = #{auction_Id}
+    </select>
+    <!-- <select id="getClosedBidding" resultType="org.dblab.auction_backend.domain.Bidding">
+        SELECT auction_Id, bid_price, farm_id, consumer_id, auction_name
+        FROM auction
+        WHERE auction_Id = #{auction_Id};
+    </select> -->
+
+    <!-- 마감된 경매 농가 경매 점수 추가 -->
+    <update id="plusFarmPachiPoint" >
+        UPDATE farm_member
+        SET pachi_point = pachi_point+5 
+        WHERE farm_id= #{farm_id}
+    </update>
+
+    <!-- 마감된 경매 낙찰자, 리뷰후기 경매 점수 추가 -->
+    <update id="plusConsumerPachiPoint" >
+        UPDATE consumer_member 
+        SET pachi_point = pachi_point+5 
+        WHERE consumer_id= #{consumer_id}
+    </update>
+
+    <update id="plusConsumerAuctionCount">
+        UPDATE consumer_member 
+        SET count_auction = count_auction+1
+        WHERE consumer_id= #{consumer_id}
+    </update>
+
+    <update id="plusFarmAuctionCount">
+        UPDATE farm_member 
+        SET count_auction = count_auction+1
+        WHERE farm_id= #{farm_id}
+    </update>
+
+
+    <!-- ############################################## 마이페이지 #################################################### -->
+    
+    <!-- 소비자, 농가 경매내역 가져오기 -->
+    <select id="getMypageConsumerAuctionDetails" resultType="map">
+        SELECT * 
+        FROM auction AS a
+        INNER JOIN product AS p ON a.product_id = p.product_id
+        LEFT JOIN auction_review AS a_r ON a.auction_id = a_r.auction_id
+        WHERE a.consumer_id = #{consumer_id}
+        ORDER BY ABS(DATEDIFF(NOW(), deadline_date)) 
+        LIMIT #{startLimit}, 5
+    </select>
+
+    <select id="getMypageFarmAuctionDetails" resultType="map">
+        SELECT * 
+        FROM auction AS a
+        INNER JOIN product AS p ON a.product_id = p.product_id
+        LEFT JOIN auction_review AS a_r ON a.auction_id = a_r.auction_id
+        WHERE a.farm_id = #{farm_id}
+        ORDER BY ABS(DATEDIFF(NOW(), deadline_date)) 
+        LIMIT #{startLimit}, 5
+    </select>
+
+    <select id="farmCountAuction" resultType="int">
+        SELECT count_auction
+        FROM farm_member
+        WHERE farm_id =#{farm_id}
+    </select>
+
+    <select id="consumerCountAuction" resultType="int">
+        SELECT count_auction
+        FROM consumer_member
+        WHERE consumer_id =#{consumer_id}
+    </select>
+    
+    <!--a.product_id = p.product_id and     , product p-->
+    <!-- ############################################## 찜 #################################################### -->
+
+    <select id="checkWish" resultType="int">
+        SELECT EXISTS (SELECT * FROM wish WHERE auction_id=#{auction_id} and consumer_Id=#{consumer_id})
+    </select>
+
+    <!-- 찜하기 추가-->
+    <insert id="registWish">
+        INSERT INTO wish
+        (auction_Id, consumer_Id) VALUES
+        (#{auction_id}, #{consumer_id})
+    </insert>
+
+    <delete id="deleteWish">
+		DELETE FROM wish WHERE consumer_id = #{consumer_id} and auction_id = #{auction_id}
+	</delete>
+
+    <delete id="deleteAuctionWish">
+		DELETE FROM wish WHERE auction_id = #{auction_id}
+	</delete>
+
+    <select id="getWishList" resultType="map">
+        SELECT * FROM auction a, product p, wish w
+        WHERE a.auction_id = w.auction_id and a.product_id = p.product_id and w.consumer_id = #{consumer_id}
+        ORDER BY ABS(DATEDIFF(NOW(), deadline_date)) 
+        LIMIT #{startLimit}, 5
+    </select>
+
+
+    <!--마이페이지에서 소비자 파치포인트 조회하는 부분인데 어제 sql문때문에 서버가 꺼지는 에러가있어서 혹시 또 에러 발생하면 이부분 지워주세요!-->
+    <select id = "consumerPachiPoint" resultType="int">
+        SELECT pachi_point
+        FROM consumer_member
+        WHERE consumer_id=#{consumer_id}
+    </select>
+
+    <select id = "farmPachiPoint" resultType="int">
+        SELECT pachi_point
+        FROM farm_member
+        WHERE farm_id=#{farm_id}
+    </select>
+
+    <!-- #################################################### 결제 및 배송 ##################################################### !-->
+    <select id="registPayment" parameterType="org.dblab.auction_backend.domain.PaymentDTO" resultType="org.dblab.auction_backend.domain.PaymentDTO">  
+        INSERT INTO payment
+        (auction_Id, payment_amount, pay_method) 
+        values
+        (#{auction_Id}, #{payment_amount}, #{pay_method})
+		RETURNING payment_id, auction_Id, payment_amount, pay_method
+    </select>
+
+    <select id="registDelivery" parameterType="org.dblab.auction_backend.domain.DeliveryDTO" resultType="org.dblab.auction_backend.domain.DeliveryDTO">  
+        INSERT INTO delivery
+        (payment_id, destination, zipcode) 
+        values
+        (#{payment_id}, #{destination}, #{zipcode})
+		RETURNING delivery_id, d_status, payment_id, destination, zipcode
+    </select>
+
+    <!-- <resultMap type="org.dblab.auction_backend.domain.PaymentDTO" id="PaymentDTO">
+        <id property="payment_id" column="payment_id" />
+        <id property="auction_Id" column="auction_Id" />
+        <id property="payment_amount" column="payment_amount" />
+        <id property="pay_method" column="pay_method" />
+    </resultMap>
+
+    <resultMap type="org.dblab.auction_backend.domain.DeliveryDTO" id="DeliveryDTO">
+        <id property="delivery_id" column="delivery_id" />
+        <id property="d_status" column="d_status" />
+        <id property="departure_date" column="departure_date" />
+        <id property="arrival_date" column="arrival_date" />
+        <id property="payment_id" column="payment_id" />
+        <id property="zipcode" column="zipcode" />
+        <id property="destination" column="destination" />
+    </resultMap>
+
+    <resultMap type="org.dblab.auction_backend.domain.Bidding" id="Bidding">
+        <id property="auction_Id" column="auction_Id" />
+        <id property="bid_price" column="bid_price" />
+        <id property="farm_id" column="farm_id" />
+        <id property="consumer_id" column="consumer_id" />
+        <id property="auction_name" column="auction_name" />
+        <id property="product_img_name" column="product_img_name" />
+        <id property="f_farm_name" column="f_farm_name" />
+        <id property="c_name" column="c_name" />
+    </resultMap>
+
+    <resultMap type="org.dblab.auction_backend.domain.OrderDTO" id="OrderDTO">
+        <collection property="PaymentDTO" resultMap="PaymentDTO"/>
+        <collection property="DeliveryDTO" resultMap="DeliveryDTO"/>
+        <collection property="Bidding" resultMap="Bidding"/>
+    </resultMap> -->
+
+    <!-- <select id="getOrder" resultMap="OrderDTO">
+        SELECT * FROM auction a, payment p, deliivery d 
+        WHERE a.auction_Id = p.auction_Id AND p.payment_id = d.payment_id AND p.auction_Id = #{auction_Id}
+    </select> -->
+
+    <update id="updatePaymentStatus" >
+        UPDATE auction
+        SET payment_status = 1 
+        WHERE auction_Id= #{auction_Id}
+    </update>
+</mapper>
+
+
+

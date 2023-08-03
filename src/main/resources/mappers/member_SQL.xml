@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE  mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dblab.auction_backend.mapper.MemberMapper">
+
+    <!--  #################################################### 소비자 CRUD ####################################################  --> 
+
+    <select id="signupConsumer" parameterType="org.dblab.auction_backend.domain.ConsumerMemberDTO" resultType="org.dblab.auction_backend.domain.ConsumerMemberDTO">  
+        INSERT INTO consumer_member
+        (c_passwd, c_name, c_email, c_phonenum, c_zipcode, c_location, c_detail_location, token) 
+        values
+        (#{c_passwd}, #{c_name}, #{c_email}, #{c_phonenum}, #{c_zipcode}, #{c_location}, #{c_detail_location}, #{token})
+		RETURNING consumer_id, c_name, c_email, c_phonenum, c_zipcode, c_location, c_detail_location, authority, token, pachi_point, count_auction
+    </select>
+
+    <select id="getConsumerMember" resultType="org.dblab.auction_backend.domain.ConsumerMemberDTO">
+        SELECT * FROM consumer_member WHERE c_email = #{c_email}
+    </select>
+
+	<update id="updateConsumerMemberPassword">
+		UPDATE consumer_member
+		SET c_passwd= #{c_passwd}
+		WHERE consumer_id = #{consumer_id}
+	</update>
+
+	<update id="updateConsumerMemberName">
+		UPDATE consumer_member
+		SET c_name= #{c_name}
+		WHERE consumer_id = #{consumer_id}
+	</update>
+
+	<update id="updateConsumerMemberPhoneNumber">
+		UPDATE consumer_member
+		SET c_phonenum= #{c_phonenum}
+		WHERE consumer_id = #{consumer_id}
+	</update>
+
+    <update id="updateConsumerMemberAddress">
+		UPDATE consumer_member
+		SET c_zipcode= #{c_zipcode}, 
+        c_location= #{c_location},
+		c_detail_location= #{c_detail_location}
+		WHERE consumer_id = #{consumer_id}
+	</update>
+
+    <update id="updateConsumerMemberProfileImage">
+		UPDATE consumer_member
+		SET c_profile_img= #{c_profile_img}
+		WHERE consumer_id = #{consumer_id}
+	</update>
+
+	<delete id="deleteConsumerMemberWish">
+		DELETE FROM wish WHERE consumer_id = #{consumer_id}
+	</delete>
+
+	<update id="deleteConsumerMember">
+		UPDATE consumer_member
+		SET c_name = #{withdrawal_member},
+		c_email = #{withdrawal_member},
+		c_passwd = NULL,
+		c_phonenum = NULL,
+		c_zipcode = NULL,
+		c_location = NULL,
+		c_detail_location = NULL,
+		c_profile_img = NULL,
+		token = NULL,
+		pachi_point = 0,
+		count_auction = 0
+		WHERE consumer_id = #{consumer_id}
+	</update>
+
+
+    <!--  #################################################### 농가 CRUD ####################################################  --> 
+
+    <select id="signupFarmMember" parameterType="org.dblab.auction_backend.domain.FarmMemberDTO" resultType="org.dblab.auction_backend.domain.FarmMemberDTO">
+        insert into farm_member
+        (f_passwd, f_email, f_phonenum, f_name, f_RRN, f_BRN, f_zipcode, f_location, f_farm_name, 
+        f_num, f_explanation, f_major_crop, f_profile_img, f_img, f_bank, f_bank_name, f_bank_num, f_bank_img, token) 
+        values
+        (#{f_passwd}, #{f_email}, #{f_phonenum}, #{f_name}, #{f_RRN}, #{f_BRN}, #{f_zipcode}, #{f_location}, #{f_farm_name}, 
+        #{f_num}, #{f_explanation}, #{f_major_crop}, #{f_profile_img}, #{f_img}, #{f_bank}, #{f_bank_name}, #{f_bank_num}, #{f_bank_img}, #{token}) 
+		RETURNING farm_id, f_email, f_phonenum, f_name, f_RRN, f_BRN, f_zipcode, f_location, f_farm_name, 
+        f_num, f_explanation, f_major_crop, f_profile_img, f_img, f_bank, f_bank_name, f_bank_num, f_bank_img, authority, token, pachi_point, count_auction
+    </select>
+
+    <select id="getFarmMember" resultType="map">
+        SELECT f_email, f_phonenum, f_name, f_BRN, f_zipcode, f_location, f_farm_name, f_num, f_explanation, f_major_crop, f_profile_img, f_img, pachi_point  
+		FROM farm_member 
+		WHERE farm_id = #{farm_id}
+    </select>
+
+	<select id="getFarmMemberAuth" resultType="org.dblab.auction_backend.domain.FarmMemberDTO">
+        SELECT * FROM farm_member 
+		WHERE f_email = #{f_email}
+    </select>
+	
+
+    <update id="updateFarmMemberPassword">
+		UPDATE farm_member
+		SET f_passwd= #{f_passwd}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+    <update id="updateFarmMemberName">
+		UPDATE farm_member
+		SET f_name= #{f_name}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+    <update id="updateFarmMemberPhoneNumber">
+		UPDATE farm_member
+		SET f_phonenum= #{f_phonenum}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+    <update id="updateFarmMemberAddress">
+		UPDATE farm_member
+		SET f_zipcode= #{f_zipcode}, 
+        f_location= #{f_location}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+	<update id="updateFarmMemberProfileImage">
+		UPDATE farm_member
+		SET f_profile_img= #{f_profile_img}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+	<update id="updateFarmMemberBank">
+		UPDATE farm_member
+		SET f_bank = #{f_bank},
+        f_bank_name = #{f_bank_name},
+        f_bank_num = #{f_bank_num},
+		f_bank_img = #{f_bank_img}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+    <update id="updateFarmMemberNumber">
+		UPDATE farm_member
+		SET f_num= #{f_num}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+    <update id="updateFarmMemberFarmName">
+		UPDATE farm_member
+		SET f_farm_name= #{f_farm_name}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+    <update id="updateFarmMemberExplanation">
+		UPDATE farm_member
+		SET f_explanation= #{f_explanation}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+    <update id="updateFarmMemberMajorCrop">
+		UPDATE farm_member
+		SET f_major_crop= #{f_major_crop}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+    <update id="updateFarmImages">
+		UPDATE farm_member
+		SET f_img= #{f_img}
+		WHERE farm_id = #{farm_id}
+	</update>
+
+	<update id="deleteFarmMember">
+		UPDATE farm_member
+		SET f_name = #{withdrawal_member},
+		f_email = #{withdrawal_member},
+		f_passwd = NULL,
+		f_phonenum = NULL,
+		f_RRN = NULL,
+		f_BRN = NULL,
+		f_zipcode = NULL,
+		f_location = NULL,
+		f_farm_name = NULL,
+		f_num = NULL,
+		f_explanation = NULL,
+		f_major_crop = NULL,
+		f_profile_img = NULL,
+		f_img = NULL,
+		f_bank = NULL,
+		f_bank_name = NULL,
+		f_bank_num = NULL,
+		f_bank_img = NULL,
+		token = NULL,
+		pachi_point = 0,
+		count_auction = 0
+		WHERE farm_id = #{farm_id}
+	</update>
+
+    <!-- #################################################### 농가, 소비자 아이디 비번 찾기 ####################################################-->
+    
+	<select id="findConsumerEmail" resultType="String">
+		SELECT c_email FROM consumer_member WHERE c_phonenum = #{c_phonenum} and c_name = #{c_name}
+	</select>
+
+	<select id="findFarmEmail" resultType="String">
+		SELECT f_email FROM farm_member WHERE f_phonenum = #{f_phonenum} and f_name = #{f_name}
+	</select>
+
+	<update id="farmPasswd">
+		UPDATE farm_member set f_passwd = #{f_passwd} WHERE f_name = #{f_name} and f_email = #{f_email} and f_phonenum = #{f_phonenum}
+	</update>
+
+	<update id="consumerPasswd">
+		UPDATE consumer_member set c_passwd = #{c_passwd} WHERE c_name = #{c_name} and c_email = #{c_email} and c_phonenum = #{c_phonenum}
+	</update>
+
+	<select id="findFarmId" resultType="Integer">
+		SELECT farm_id FROM farm_member WHERE f_name = #{f_name} and f_email= #{f_email} and f_phonenum=#{f_phonenum}
+	</select>
+
+	<select id="findConsumerId" resultType="int">
+		SELECT consumer_id FROM consumer_member WHERE c_name = #{c_name} and c_email= #{c_email} and c_phonenum=#{c_phonenum}
+	</select>
+
+	<!--  #################################################### 토큰 설정 ####################################################  --> 
+
+    <update id="setNullConsumerToken">
+		UPDATE consumer_member
+		SET token= null
+		WHERE c_email = #{c_email}
+	</update>
+
+    <update id="setNullFarmToken">
+		UPDATE farm_member
+		SET token= null
+		WHERE f_email = #{f_email}
+	</update>
+
+    <update id="setConsumerToken">
+		UPDATE consumer_member
+		SET token= #{token}
+		WHERE c_email = #{c_email}
+	</update>
+
+    <update id="setFarmToken">
+		UPDATE farm_member
+		SET token= #{token}
+		WHERE f_email = #{f_email}
+	</update>
+
+
+    <!--  #################################################### 로그인, 이메일 중복 확인 ####################################################  --> 
+
+    <select id="loginConsumerMember" resultType="org.dblab.auction_backend.domain.ConsumerMemberDTO">
+        SELECT * FROM consumer_member WHERE c_email = #{email} AND c_passwd = #{password}
+    </select>
+
+    <select id="loginFarmMember" resultType="org.dblab.auction_backend.domain.FarmMemberDTO">
+        SELECT * FROM farm_member WHERE f_email = #{email} AND f_passwd = #{password}
+    </select>
+
+    <select id="existEmail" resultType="int">
+        SELECT EXISTS (SELECT * FROM consumer_member CROSS JOIN farm_member WHERE c_email = #{email} OR f_email = #{email})
+    </select>
+
+	<select id="existAuctionBiddingUser" resultType="Integer">
+        SELECT EXISTS (SELECT * FROM auction WHERE bid_status = 1 AND consumer_id = #{consumer_id} OR farm_id = #{farm_id})
+    </select>
+</mapper>
